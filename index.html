@@ -326,7 +326,7 @@
   const copied  = document.getElementById('copied');
   const midText = document.getElementById('midText');
 
-  const MID_STRING = 'ABCDEFGHIJKLM';
+  /* const MID_STRING = 'ABCDEFGHIJKLM'; */
 
   /* ========== 翻页 ========== */
   let entered = false;
@@ -394,7 +394,10 @@
   copyBtn.addEventListener('click', function () {
     if (copyBtn.classList.contains('out')) return;
 
-    copyToClipboard(MID_STRING);
+    const cdk = midText.textContent.trim();
+    if (!cdk) return;
+    
+    copyToClipboard(cdk);
 
     // 向上浮起并隐去（不占位）
     copyBtn.classList.add('out');
