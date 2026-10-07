@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>生日快乐</title>
+<style>
+  :root{
+    --ease: cubic-bezier(.22,.61,.36,1);
+    --ease-io: cubic-bezier(.4,0,.2,1);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html, body{ height:100%; }
+
+  body{
+    background:#000;
+    color:#fff;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+                 "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+                 "Noto Sans SC", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+    text-rendering: optimizeLegibility;
+  }
+
+  .stage{
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ---------- 页面容器 ---------- */
+  .page{
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 24px;
+    transition: opacity .75s var(--ease),
+                transform .75s var(--ease),
+                filter .75s var(--ease);
+    will-change: opacity, transform, filter;
+  }
+
+  .page.is-hidden{
+    opacity: 0;
+    transform: scale(.97);
+    filter: blur(12px);
+    pointer-events: none;
+  }
+
+  /* ---------- 通用文字 ---------- */
+  .title{
+    font-size: clamp(42px, 9vw, 86px);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.06;
+    color: #fff;
+  }
+
+  .sub{
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: .02em;
+    line-height: 1.5;
+    color: #fff;
+  }
+
+  /* ---------- 入场动画 ---------- */
+  @keyframes fadeUpBlur{
+    from{ opacity:0; transform: translateY(18px); filter: blur(9px); }
+    to  { opacity:1; transform: translateY(0);    filter: blur(0);   }
+  }
+
+  /* ================= 第一页 ================= */
+  .page-1 .title{
+    animation: fadeUpBlur .95s var(--ease) .10s both;
+  }
+  .page-1 .sub{
+    margin-top: 22px;
+    animation: fadeUpBlur .95s var(--ease) .30s both;
+  }
+
+  .next-btn{
+    margin-top: 64px;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    background: none;
+    border: 0;
+    color: #fff;
+    cursor: pointer;
+    opacity: 0;
+    -webkit-tap-highlight-color: transparent;
+    animation: fadeUpBlur .9s var(--ease) .55s both,
+               bob 2.6s ease-in-out 1.7s infinite;
+    transition: opacity .3s ease;
+  }
+  .next-btn:hover{ opacity: .65; }
+  .next-btn:active{ opacity: .4; }
+
+  @keyframes bob{
+    0%, 100%{ transform: translateY(0); }
+    50%     { transform: translateY(7px); }
+  }
+
+  /* ================= 第二页 ================= */
+  .page-2 .title{
+    opacity: 0;
+  }
+  .page-2.play .title{
+    animation: fadeUpBlur .95s var(--ease) .05s both;
+  }
+
+  /* ---------- 「点击此处以查看」 ---------- */
+  .trigger{
+    position: relative;
+    margin-top: 24px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 0;
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    opacity: 0;
+    filter: blur(7px);
+    transform: translateY(10px);
+    transition: opacity .75s var(--ease),
+                filter .75s var(--ease),
+                transform .75s var(--ease);
+  }
+  .trigger.show{
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+
+  .trigger .ch{
+    display: block;
+    width: 1em;
+    overflow: hidden;
+    text-align: center;
+    white-space: nowrap;
+    transition: width .42s var(--ease),
+                opacity .42s var(--ease),
+                filter .42s var(--ease);
+    will-change: width, opacity;
+  }
+  .trigger .ch.gone{
+    width: 0;
+    opacity: 0;
+    filter: blur(4px);
+  }
+
+  .trigger-line{
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -8px;
+    height: 1px;
+    border-radius: 1px;
+    background: #fff;
+    transform: scaleX(0);
+    transform-origin: 50% 50%;
+    transition: transform .72s var(--ease);
+  }
+  .trigger.line-in  .trigger-line{ transform: scaleX(1); }
+  .trigger.line-out .trigger-line{ transform: scaleX(0); }
+
+  /* ---------- 展开内容 ---------- */
+  .reveal{
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 26px;
+    width: 100%;
+  }
+  .reveal.show{ display: flex; }
+
+  .reveal > *{ opacity: 0; }
+  .reveal.show > *{
+    animation: fadeUpBlur .75s var(--ease) both;
+  }
+  .reveal.show > *:nth-child(1){ animation-delay: 0s;    }
+  .reveal.show > *:nth-child(2){ animation-delay: .13s; }
+  .reveal.show > *:nth-child(3){ animation-delay: .26s; }
+
+  .mid-text{
+    font-size: clamp(22px, 4.6vw, 30px);
+    font-weight: 500;
+    letter-spacing: .09em;
+    line-height: 1.2;
+    color: #fff;
+  }
+
+  /* ---------- 复制行 ---------- */
+  .copy-row{
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 14px;
+  }
+
+  .copy-hint{
+    display: inline-block;
+    background: none;
+    border: 0;
+    padding: 0;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: .07em;
+    line-height: 1.2;
+    color: #fff;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .45s var(--ease),
+                opacity .45s var(--ease),
+                filter .45s var(--ease);
+  }
+  .copy-hint.out{
+    transform: translateY(-18px);
+    opacity: 0;
+    filter: blur(5px);
+    pointer-events: none;
+  }
+
+  .copied{
+    display: none;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .07em;
+    line-height: 1.2;
+    color: #30d158;
+  }
+  .copied.show{
+    display: inline-block;
+    animation: copiedIn .55s var(--ease) both;
+  }
+
+  @keyframes copiedIn{
+    from{ opacity:0; transform: translateY(9px); filter: blur(4px); }
+    to  { opacity:1; transform: translateY(0);   filter: blur(0);   }
+  }
+
+  .reveal .sub{
+    margin-top: 22px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<main class="stage">
+
+  <!-- ================= 第一页 ================= -->
+  <section class="page page-1" id="page1">
+    <h1 class="title">生日 · 快乐</h1>
+    <p class="sub">新岁 · 万事胜意</p>
+
+    <button class="next-btn" id="nextBtn" aria-label="下一页">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6 9.5L12 15.5L18 9.5"
+              stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </section>
+
+  <!-- ================= 第二页 ================= -->
+  <section class="page page-2 is-hidden" id="page2">
+    <h1 class="title" id="title2">一份心意</h1>
+
+    <button class="trigger" id="trigger" aria-label="轻触查看">
+      <span class="ch">轻</span><span class="ch">触</span><span class="ch">查</span><span class="ch">看</span>
+      <span class="trigger-line"></span>
+    </button>
+
+    <div class="reveal" id="reveal">
+      <div class="mid-text" id="midText">ABCDEFGHIJKLM</div>
+
+      <div class="copy-row">
+        <button class="copy-hint" id="copyBtn">复制</button>
+        <span class="copied" id="copied">已复制</span>
+      </div>
+
+      <p class="sub">小程序「兽纪元Furry-Era」— 我的 — 兑换</p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  const page1   = document.getElementById('page1');
+  const page2   = document.getElementById('page2');
+  const nextBtn = document.getElementById('nextBtn');
+  const trigger = document.getElementById('trigger');
+  const reveal  = document.getElementById('reveal');
+  const copyBtn = document.getElementById('copyBtn');
+  const copied  = document.getElementById('copied');
+  const midText = document.getElementById('midText');
+
+  const MID_STRING = 'ABCDEFGHIJKLM';
+
+  /* ========== 翻页 ========== */
+  let entered = false;
+
+  nextBtn.addEventListener('click', function () {
+    if (entered) return;
+    entered = true;
+
+    page1.classList.add('is-hidden');
+    page2.classList.remove('is-hidden');
+    page2.classList.add('play');
+
+    // 大字动画结束后，再显示「点击此处以查看」
+    setTimeout(function () {
+      trigger.classList.add('show');
+      // 文字浮现后再让下划线从中间展开
+      setTimeout(function () {
+        trigger.classList.add('line-in');
+      }, 260);
+    }, 780);
+  });
+
+  /* ========== 点击「点击此处以查看」 ========== */
+  let triggered = false;
+
+  trigger.addEventListener('click', function () {
+    if (triggered) return;
+    triggered = true;
+
+    // 下划线向中间收缩
+    trigger.classList.remove('line-in');
+    trigger.classList.add('line-out');
+
+    const chars = Array.prototype.slice.call(trigger.querySelectorAll('.ch'));
+    const n = chars.length;
+
+    // 生成「由两端向中间」的消失顺序
+    const order = [];
+    let l = 0, r = n - 1;
+    while (l <= r) {
+      order.push(l);
+      if (l !== r) order.push(r);
+      l++; r--;
+    }
+
+    const STEP = 45;   // 每个字符间隔
+    const DUR  = 430;  // 单个字符收缩时长
+
+    order.forEach(function (idx, i) {
+      setTimeout(function () {
+        chars[idx].classList.add('gone');
+      }, i * STEP);
+    });
+
+    const total = (order.length - 1) * STEP + DUR;
+
+    // 全部收拢后，移除占位并显示内容
+    setTimeout(function () {
+      trigger.style.display = 'none';
+      reveal.classList.add('show');
+    }, total + 80);
+  });
+
+  /* ========== 复制到剪贴板 ========== */
+  copyBtn.addEventListener('click', function () {
+    if (copyBtn.classList.contains('out')) return;
+
+    copyToClipboard(MID_STRING);
+
+    // 向上浮起并隐去（不占位）
+    copyBtn.classList.add('out');
+
+    setTimeout(function () {
+      copyBtn.style.display = 'none';
+      copied.classList.add('show');
+    }, 430);
+  });
+
+  function copyToClipboard(text) {
+    // 优先使用现代剪贴板 API
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).catch(function () {
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    ta.style.left = '-1000px';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+})();
+</script>
+
+</body>
+</html>
